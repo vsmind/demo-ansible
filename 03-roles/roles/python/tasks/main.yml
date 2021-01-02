@@ -1,0 +1,14 @@
+- name: Install required dependencies
+  apt:
+    name:
+      - python3-apt
+      - python3-setuptools
+      - python3-dev
+      - build-essential
+      - python3-pymysql
+    state: present
+
+- name: Install PyMySQL for work with database
+  pip:
+    name: PyMySQL
+    state: present
