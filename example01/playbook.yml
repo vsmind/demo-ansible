@@ -1,0 +1,75 @@
+- name: Deploy a web application
+  hosts: all
+  pre_tasks:
+    - name: Set discovered Ansible Python interpreter.
+      set_fact:
+        ansible_python_interpreter: "{{ ansible_facts.python.executable }}"
+      when: ansible_python_interpreter is not defined
+  tasks:
+    - name: Install required dependencies
+      apt:
+        name:
+          - python3-setuptools
+          - python3-dev
+          - build-essential
+        state: present
+
+    - name: Install PyMySQL for work with database
+      pip:
+        name: PyMySQL
+        state: present
+
+    - name: Install MySql database
+      apt:
+        name:
+          - default-mysql-server
+          - default-mysql-client
+        state: present
+
+    - name: Start MySql server
+      shell: /etc/init.d/mysql start
+
+    - name: Test pymysql is present
+      pip:
+        name: PyMySQL
+        state: present
+
+    - name: python version
+      shell: python --version 2>&1
+
+    - name: Install test stage
+      apt:
+        name:
+          - python-pymysql
+          - python3-pymysql
+          - python-apt
+          - python3-apt
+
+    - name: Create mySql application db
+      mysql_db:
+        name: employee_db
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Create mySql database user
+      mysql_user:
+        name: db_user
+        password: Passw0rd
+        priv: '*.*:ALL'
+        state: present
+        host: '%'
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      no_log: true
+
+    - name: Install python flask dependency
+      pip:
+        name: [ 'flask', 'flask-mysql' ]
+        state: present
+
+    - name: Copy source code to target
+      copy:
+        src: source/app.py
+        dest: /opt/app.py
+
+    - name: Start Web Server
+      shell: FLASK_APP=/opt/app.py nohup flask run --host=0.0.0.0 &
